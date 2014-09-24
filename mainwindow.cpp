@@ -69,7 +69,6 @@ QByteArray *MainWindow::HashFile(const QString &fileName)
 
 QHash<QByteArray, QString> *MainWindow::HashTargetDir(const QString &dir, bool recursive)
 {
-
     QDir dirpath(dir);
     dirpath.setFilter(QDir::Writable | QDir::AllEntries | QDir::NoDot); //these are the filters: all files writable without Dot
     QHash<QByteArray, QString> *result;
@@ -78,6 +77,8 @@ QHash<QByteArray, QString> *MainWindow::HashTargetDir(const QString &dir, bool r
     QByteArray *hash;
     hash = new QByteArray();
     QDirIterator dI(dirpath, recursive ? QDirIterator::Subdirectories : QDirIterator::NoIteratorFlags);
+
+    ui->progressBar->setMaximum(dirpath.entryList().count()); //count without recursion first. inaccuracies really shouldnt matter here
 
 
     int t_progress = 0;
@@ -155,7 +156,7 @@ void MainWindow::Rename(QFile &file)
     if(Chck_doubles(newPath))
     {
         QString newAltPath(fI.absolutePath() + "/doubles/nameCollisions/" + fI.fileName()); //there is probably a more elegant and generic
-                                                                                            //way to auto-rename a file with the same name
+                                                                                            //way to auto-rename a file with the same name.
                                                                                             //none comes to mind currently
         file.rename(newAltPath);
     }
@@ -201,12 +202,9 @@ void MainWindow::on_pb_Browse_clicked()
 
 
     if (dialog.exec())
-    {
-        //ui->le_targetDir->setText(dialog.directory().path());
-   //     HashTargetDir(dialog.selectedFiles().first(), false); outcommented, goes in the "merge" button
+    {        
         QString dir(dialog.directory().path());
         ui->le_targetDir->setText(dir);
-        //ui->progressBar->setMaximum(dir.entryList().count()); //count without recursion first. inaccuracies really shouldnt matter here
         HashTargetDir(dir);
     }
 
