@@ -42,6 +42,10 @@ private slots:
 
     void on_cb_subdirs_toggled(bool checked);
 
+    void on_comboBox_activated(const QString &arg1);
+
+    void on_comboBox_activated(int index);
+
 signals:
 
 
@@ -62,6 +66,9 @@ private:
     QStringList *viewModelStringList;
     QStringList *hashes;//||
     QStringList *files; //|| one of theses two is displayed on the listView. or the empty list. This is to avoid hashing the hashes
+    enum Algo { md5 = QCryptographicHash::Md5, sha1 = QCryptographicHash::Sha1, sha224 = QCryptographicHash::Sha224, sha256 = QCryptographicHash::Sha256, sha384 = QCryptographicHash::Sha384, sha512 = QCryptographicHash::Sha512, sha3_224 = QCryptographicHash::Sha3_224, sha3_256 = QCryptographicHash::Sha3_256, sha3_384 = QCryptographicHash::Sha3_384, sha3_512 = QCryptographicHash::Sha3_512 }; //remember kids: more = better.
+    QStringList algoText;    
+    Algo alg = (Algo)2;
 
 
 };

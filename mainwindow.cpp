@@ -24,8 +24,11 @@ MainWindow::MainWindow(QWidget *parent) :
 
     viewModelStringList = files; //could also be hashes (both empty at this stat) but files makes more sense since the hashes are calculated out of the files
     strmod->setStringList(*viewModelStringList);
+    algoText << "md5" << "sha1" << "sha224" << "sha256" << "sha384" << "sha512" << "sha3_224" << "sha3_256" << "sha3_384" << "sha3_512";
 
     ui->setupUi(this);
+    ui->comboBox->addItems(algoText);
+    alg = (Algo)ui->comboBox->currentIndex();
 }
 
 MainWindow::~MainWindow()
@@ -54,12 +57,13 @@ QByteArray *MainWindow::HashFile(const QString &fileName)
     QFile file(fileName);
     file.open(QIODevice::ReadWrite);
     QByteArray *result;
+    QCryptographicHash::Algorithm al = (QCryptographicHash::Algorithm)alg;
 
 
 
     if(file.isReadable())
     {
-        result = new QByteArray(QCryptographicHash::hash(file.readAll(), QCryptographicHash::Sha3_512));
+        result = new QByteArray(QCryptographicHash::hash(file.readAll(), (QCryptographicHash::Algorithm)alg));
         file.close();        
         return result;
     }
@@ -260,6 +264,7 @@ void MainWindow::on_pb_Merge_clicked()
     if(viewModelStringList == hashes)
 
     {
+        hashes = new QStringList();
 
         viewModelStringList = files;
 
@@ -316,4 +321,10 @@ void MainWindow::del_pressed()
 void MainWindow::on_cb_subdirs_toggled(bool checked)
 {
     recursive = checked;
+}
+
+
+void MainWindow::on_comboBox_activated(int index)
+{
+    alg = (Algo)index;
 }
