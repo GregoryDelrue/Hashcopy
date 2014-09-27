@@ -28,7 +28,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->setupUi(this);
     ui->comboBox->addItems(algoText);
-    alg = (Algo)ui->comboBox->currentIndex();
+    alg = (Algo)ui->comboBox->currentIndex(); //make sure if you add or remove algorithms to update the Text and makes sure the positions stay the same. If you put (lets say) murmurhash at first position in the header but not in the algoText you will confuse you users.
 }
 
 MainWindow::~MainWindow()
@@ -57,7 +57,6 @@ QByteArray *MainWindow::HashFile(const QString &fileName)
     QFile file(fileName);
     file.open(QIODevice::ReadWrite);
     QByteArray *result;
-    QCryptographicHash::Algorithm al = (QCryptographicHash::Algorithm)alg;
 
 
 
@@ -81,7 +80,7 @@ QHash<QByteArray, QString> *MainWindow::HashTargetDir(const QString &dir, bool r
     QByteArray *hash;
     hash = new QByteArray();
     QDirIterator dI(dirpath, recursive ? QDirIterator::Subdirectories : QDirIterator::NoIteratorFlags);
-
+    ui->progressBar->setMinimum(0);
     ui->progressBar->setMaximum(dirpath.entryList().count()); //count without recursion first. inaccuracies really shouldnt matter here
 
 
@@ -96,9 +95,7 @@ QHash<QByteArray, QString> *MainWindow::HashTargetDir(const QString &dir, bool r
                                     //especially not if the user runs the program for the first time
         {
 
-            QFile file(result->value(*hash));    //TODO: write a function that, in case of duplicates, compares the filesizes in bytes.
-                                                //this should eliminate any possible hash-collision.
-                                                //NOTE: this is already extremely unlikely esp. when using the SHA3 Algorithm
+            QFile file(result->value(*hash));   //removed the todo. probablility of collision is at 1:10^60 with only md5, shouldnt be an issue
 
             if(file.open(QFile::ReadWrite) && file.exists())
             {                
@@ -126,6 +123,7 @@ QHash<QByteArray, QString> *MainWindow::HashTargetDir(const QString &dir, bool r
         }
 
     }
+    t_progress =0;
     ui->progressBar->reset();
 
     return result;
@@ -143,7 +141,7 @@ void MainWindow::MergeHashLists(const QHash<QByteArray, QString> &sourceHash, co
         if(targetHash.contains(i.key()))
         {
             QFile file(i.value());
-            if(file.isWritable() && file.exists())
+            if(file.exists())
             {
                 Rename(file);
             }
@@ -154,19 +152,29 @@ void MainWindow::MergeHashLists(const QHash<QByteArray, QString> &sourceHash, co
 }
 
 void MainWindow::Rename(QFile &file)
-{
+{    
     QFileInfo fI(file);
     QString newPath(fI.absolutePath() + "/doubles/" + fI.fileName());
+    bool openingResult = true;
     if(Chck_doubles(newPath))
     {
         QString newAltPath(fI.absolutePath() + "/doubles/nameCollisions/" + fI.fileName()); //there is probably a more elegant and generic
                                                                                             //way to auto-rename a file with the same name.
                                                                                             //none comes to mind currently
+        file.open(QFile::ReadWrite);
         file.rename(newAltPath);
+        file.close();
     }
     else
     {
+        file.open(QFile::ReadWrite);
         file.rename(newPath);
+        file.close();
+    }
+
+    if (!openingResult)
+    {
+        qDebug() << "Unable to open file: " << fI.absoluteFilePath() << ". Maybe you dont have the premissions to change it";
     }
 }
 
@@ -224,10 +232,6 @@ void MainWindow::on_pb_Browse_Source_clicked()
     dialog.setFileMode(QFileDialog::ExistingFiles);
     dialog.setDirectory(QDir::home());
 
-    if (viewModelStringList == hashes) {
-        viewModelStringList = files;
-        strmod->setStringList(*viewModelStringList);
-    }
 
     if(dialog.exec()) {
         if (!strmod->stringList().isEmpty()) { //either empty or currently displaying the hashes
@@ -261,28 +265,16 @@ void MainWindow::on_pb_Merge_clicked()
     QList<QByteArray> keys;
     QString t_str;
 
-    if(viewModelStringList == hashes)
+    viewModelStringList = files;
 
-    {
-        hashes = new QStringList();
 
-        viewModelStringList = files;
-
-    }
 
 
     if (!strmod->stringList().isEmpty())
     {
-       keys = HashSourceFiles(*viewModelStringList)->keys();
+       keys = HashSourceFiles(*viewModelStringList)->keys(); //HashSourceFiles returns a QHash, its keys are the QCryptographicHash
 
-       foreach(QByteArray key, keys)
-       {           
 
-           t_str = key.toHex();
-           *hashes << t_str;
-       }
-
-       viewModelStringList = hashes;
        strmod->setStringList(*viewModelStringList);
     }
     else {
@@ -305,8 +297,7 @@ void MainWindow::del_pressed()
 
     if(!strmod->stringList().isEmpty())
     {
-        QModelIndexList const mil = ui->listView->selectionModel()->selectedIndexes(); //NOTE: this is how you iterate through
-        //selected indexes, note the two ->'s. Works with ExtendedSelection
+        QModelIndexList const mil = ui->listView->selectionModel()->selectedIndexes();
         foreach(QModelIndex dex, mil)
         {
             strmod->removeRows(dex.row(),1);
