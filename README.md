@@ -1,7 +1,7 @@
 Hashcopy
 ========
 
-tiny tool to copy files based on their cryptographic hash value (SHA3 512 bit), eliminating doubles with different filenames but identical content
+tiny tool to copy files based on their cryptographic hash value ~~(SHA3 512 bit)~~ (using any hashing algorithm that comes with Qt) eliminating doubles with different filenames but identical content
 
 I recently was told that such a tool already exists and is called fdupes.
 Since it uses the MD5 hash algorithm instead of the SHA3, lets call this "exploration of the parameter space": 
