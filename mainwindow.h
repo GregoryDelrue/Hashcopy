@@ -36,8 +36,6 @@ private slots:
 
     void on_pb_Merge_clicked();
 
-    void on_cb_Rehash_stateChanged(int arg1);
-
     void del_pressed();
 
     void on_cb_subdirs_toggled(bool checked);

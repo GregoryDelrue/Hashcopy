@@ -16,7 +16,7 @@ MainWindow::MainWindow(QWidget *parent) :
     filesToBeDeleted = new QStringList();
     strmod = new QStringListModel();
     shortcut_del = new QShortcut(QKeySequence(Qt::Key_Delete), this);
-    hashes = new QStringList();
+    //hashes = new QStringList();
     files = new QStringList();
 
     shortcut_del->setContext(Qt::ApplicationShortcut);
@@ -286,10 +286,6 @@ void MainWindow::on_pb_Merge_clicked()
 
 }
 
-void MainWindow::on_cb_Rehash_stateChanged(int arg1)
-{
-
-}
 
 void MainWindow::del_pressed()
 {

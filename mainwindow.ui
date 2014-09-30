@@ -96,13 +96,6 @@
     <item>
      <layout class="QHBoxLayout" name="horizontalLayout_6">
       <item>
-       <widget class="QCheckBox" name="cb_Rehash">
-        <property name="text">
-         <string>Prevent Hash Collisions</string>
-        </property>
-       </widget>
-      </item>
-      <item>
        <widget class="QCheckBox" name="cb_keepDoubles">
         <property name="text">
          <string>Move duplicates into a separate folder instead of deleting them</string>
