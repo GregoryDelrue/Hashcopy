@@ -15,20 +15,19 @@ MainWindow::MainWindow(QWidget *parent) :
     recursive = false;
     filesToBeDeleted = new QStringList();
     strmod = new QStringListModel();
-    shortcut_del = new QShortcut(QKeySequence(Qt::Key_Delete), this);
-    //hashes = new QStringList();
-    files = new QStringList();
-
+    shortcut_del = new QShortcut(QKeySequence(Qt::Key_Delete), this); //see del_pressed(), enables the user to remove files with the delete key.
     shortcut_del->setContext(Qt::ApplicationShortcut);
+
     connect(shortcut_del, SIGNAL(activated()), this, SLOT(del_pressed()));
 
-    viewModelStringList = files; //could also be hashes (both empty at this stat) but files makes more sense since the hashes are calculated out of the files
+    viewModelStringList = new QStringList();
     strmod->setStringList(*viewModelStringList);
+
     algoText << "md5" << "sha1" << "sha224" << "sha256" << "sha384" << "sha512" << "sha3_224" << "sha3_256" << "sha3_384" << "sha3_512";
 
     ui->setupUi(this);
     ui->comboBox->addItems(algoText);
-    alg = (Algo)ui->comboBox->currentIndex(); //make sure if you add or remove algorithms to update the Text and makes sure the positions stay the same. If you put (lets say) murmurhash at first position in the header but not in the algoText you will confuse you users.
+    alg = (Algo)ui->comboBox->currentIndex(); //make sure if you add or remove algorithms, to update the Text and makes sure the positions stay the same. If you put (lets say) murmurhash at first position in the header but not in the algoText you will confuse you users.
 }
 
 MainWindow::~MainWindow()
@@ -52,7 +51,7 @@ QHash<QByteArray, QString> *MainWindow::HashSourceFiles(const QStringList &files
     return result;
 }
 
-QByteArray *MainWindow::HashFile(const QString &fileName)
+QByteArray *MainWindow::HashFile(const QString &fileName) //TODO: move to a separate thread to prevent UI-lockup
 {
     QFile file(fileName);
     file.open(QIODevice::ReadWrite);
@@ -90,7 +89,11 @@ QHash<QByteArray, QString> *MainWindow::HashTargetDir(const QString &dir, bool r
 
         t_progress++; //see: if t_progress == 10
 
-        hash = HashFile (dI.next());
+        if(QFileInfo(dI.next()).isFile())
+        {
+            hash = HashFile (dI.filePath());
+        }
+
         if(result->contains(*hash))  //in case of internal doubles. It cannot be assumed that even in the target directory there are none.
                                     //especially not if the user runs the program for the first time
         {
@@ -100,7 +103,7 @@ QHash<QByteArray, QString> *MainWindow::HashTargetDir(const QString &dir, bool r
             if(file.open(QFile::ReadWrite) && file.exists())
             {                
                 QDir doublesdir(dI.path() + "/InternalDoubles/");
-                if(!doublesdir.exists())
+                if(!doublesdir.exists()) //turns out that moving a file to a directory that does not yet exists does not work.
                 {
                     doublesdir.mkpath(dI.path() + "/InternalDoubles/");
                 }
@@ -123,7 +126,7 @@ QHash<QByteArray, QString> *MainWindow::HashTargetDir(const QString &dir, bool r
         }
 
     }
-    t_progress =0;
+    t_progress = 0;
     ui->progressBar->reset();
 
     return result;
@@ -156,7 +159,8 @@ void MainWindow::Rename(QFile &file)
     QFileInfo fI(file);
     QString newPath(fI.absolutePath() + "/doubles/" + fI.fileName());
     bool openingResult = true;
-    if(Chck_doubles(newPath))
+
+    if(QFile::exists(newPath))
     {
         QString newAltPath(fI.absolutePath() + "/doubles/nameCollisions/" + fI.fileName()); //there is probably a more elegant and generic
                                                                                             //way to auto-rename a file with the same name.
@@ -175,18 +179,6 @@ void MainWindow::Rename(QFile &file)
     if (!openingResult)
     {
         qDebug() << "Unable to open file: " << fI.absoluteFilePath() << ". Maybe you dont have the premissions to change it";
-    }
-}
-
-bool MainWindow::Chck_doubles(const QString &filePath)
-{
-    if(QFile(filePath).exists())
-    {
-        return true;
-    }
-    else
-    {
-        return false;
     }
 }
 
@@ -217,7 +209,7 @@ void MainWindow::on_pb_Browse_clicked()
     {        
         QString dir(dialog.directory().path());
         ui->le_targetDir->setText(dir);
-        HashTargetDir(dir);
+        HashTargetDir(dir); //the directory is immediately hashed after the Dialog is closed. TODO: change to only hash when clicking on merge
     }
 
 
@@ -235,15 +227,13 @@ void MainWindow::on_pb_Browse_Source_clicked()
 
     if(dialog.exec()) {
         if (!strmod->stringList().isEmpty()) { //either empty or currently displaying the hashes
-            *files << dialog.selectedFiles(); //put all the files in a stringlist, then pass it to the model
-            files->removeDuplicates();
-            viewModelStringList = files;
+            *viewModelStringList << dialog.selectedFiles(); //put all the files in a stringlist, then pass it to the model
+            viewModelStringList->removeDuplicates();
 
         }
         else {
-            *files << dialog.selectedFiles();
+            *viewModelStringList << dialog.selectedFiles();
             strmod->setStringList(*viewModelStringList);
-            //no need to set the viewModelStringList pointer to files since its already there
         }
         ui->listView->setModel(strmod);
         ui->listView->setSelectionMode(QAbstractItemView::ExtendedSelection);
@@ -264,11 +254,6 @@ void MainWindow::on_pb_Merge_clicked()
 
     QList<QByteArray> keys;
     QString t_str;
-
-    viewModelStringList = files;
-
-
-
 
     if (!strmod->stringList().isEmpty())
     {

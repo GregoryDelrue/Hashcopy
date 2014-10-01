@@ -56,12 +56,9 @@ private:
     QByteArray *HashFile(const QString &fileName);
     void MergeHashLists(const QHash<QByteArray, QString> &sourceHash, const QHash<QByteArray, QString> &targetHash);
     void Rename(QFile &file); //takes a file, puts it in /doubles/filename
-    bool Chck_doubles(const QString &filePath); //takes a path, checks if a file with it exists aready.Is a switch for Rename().
 
     QShortcut *shortcut_del;
     QStringList *viewModelStringList;
-    //removed QStringList *hashes; it was only for testing (i.e. if the files are hashed at all
-    QStringList *files; //|| one of theses two is displayed on the listView. or the empty list. This is to avoid hashing the hashes
     enum Algo { md5 = QCryptographicHash::Md5, sha1 = QCryptographicHash::Sha1, sha224 = QCryptographicHash::Sha224, sha256 = QCryptographicHash::Sha256, sha384 = QCryptographicHash::Sha384, sha512 = QCryptographicHash::Sha512, sha3_224 = QCryptographicHash::Sha3_224, sha3_256 = QCryptographicHash::Sha3_256, sha3_384 = QCryptographicHash::Sha3_384, sha3_512 = QCryptographicHash::Sha3_512 }; //remember kids: more = better.
     QStringList algoText;    
     Algo alg;
